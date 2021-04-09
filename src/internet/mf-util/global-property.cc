@@ -82,6 +82,19 @@ GlobalProperty::LoadSettings(std::string file)
 	m_ack_priority = config.get<bool>("ack-priority");
 	m_adjust_priority = config.get<bool>("adjust-priority");
 
+	// courier
+	config = root.get_child("courier");
+	std::string mode_string = config.get<std::string>("mode");
+	if(mode_string == "fair"){
+		m_courier_mode = GlobalProperty::CourierMode::fair;
+	}else if(mode_string == "fifo"){
+		m_courier_mode = GlobalProperty::CourierMode::fifo;
+	}else if(mode_string == "sf"){
+		m_courier_mode = GlobalProperty::CourierMode::sf;
+	}else if(mode_string == "schedule"){
+		m_courier_mode = GlobalProperty::CourierMode::schedule;
+	}
+	std::cout << m_courier_mode << std::endl; // for debug
 
 	// init
 	memset(m_receiverSocket,0,sizeof(m_receiverSocket));
@@ -166,6 +179,9 @@ uint64_t GlobalProperty::m_count_test = 0;
 
 bool GlobalProperty::m_ack_priority;
 bool GlobalProperty::m_adjust_priority;
+
+// courier zczhang
+GlobalProperty::CourierMode GlobalProperty::m_courier_mode;
 
 // fucntions
 void ToLower(std::string& str) {

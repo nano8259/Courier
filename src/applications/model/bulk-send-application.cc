@@ -229,22 +229,26 @@ void BulkSendApplication::SendData (void)
 			Log1("[Clock]  Time: %u send application", static_cast<uint32_t>(now));
 			m_lastClock = now;
 		}*/
-    
+    uint64_t toSend = m_sendSize;
     uint32_t chosenMf;
     bool isPrioritized = false;
-    if (m_prioritizedMf.empty()){
-      // if the prioritized vector is empty, chosen the frist Mf in the active vector
-      chosenMf = m_activeMf.front();
-    }else{
-      chosenMf = m_prioritizedMf.front();
-      isPrioritized = true;
-      // std::cout << "the priorirized mf is chosen" << std::endl;
-    }
 
-    uint64_t toSend = m_sendSize;
-    // Make sure we don't send too many
-    if (m_maxBytes > 0){
-        toSend = std::min (m_sendSize, m_maxMfBytes[chosenMf] - m_totMfBytes[chosenMf]);
+    // determine how many to send
+    if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::fair){
+      toSend = std::min (m_sendSize, m_maxBytes - m_totBytes);
+    }else if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::schedule){
+      if (m_prioritizedMf.empty()){
+        // if the prioritized vector is empty, chosen the frist Mf in the active vector
+        chosenMf = m_activeMf.front();
+      }else{
+        chosenMf = m_prioritizedMf.front();
+        isPrioritized = true;
+        // std::cout << "the priorirized mf is chosen" << std::endl;
+      }
+      // Make sure we don't send too many
+      if (m_maxBytes > 0){
+          toSend = std::min (m_sendSize, m_maxMfBytes[chosenMf] - m_totMfBytes[chosenMf]);
+      }
     }
     NS_LOG_LOGIC ("sending packet at " << Simulator::Now ());
     Ptr<Packet> packet = Create<Packet> ((uint32_t)toSend);
@@ -254,26 +258,32 @@ void BulkSendApplication::SendData (void)
     GlobalProperty::m_totalSendBytes_all += toSend;
     if (actual > 0){
       m_totBytes += actual;
-      m_totMfBytes[chosenMf] += actual;
-      GlobalProperty::m_totalSendBytes += actual;
-      
-      // check if this mf is finished
-      if(m_totMfBytes[chosenMf] >= m_maxMfBytes[chosenMf]){
-        m_isMfFinished[chosenMf] = 1;
-        // delete the chosen mf
-        std::vector<uint32_t>::iterator it;
-        for(it = m_activeMf.begin(); it != m_activeMf.end(); it++){
-          if(*it == chosenMf){
-            m_activeMf.erase(it);
-            break;
-          }
-        }
-        if(isPrioritized){
+
+      if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::fair){
+        int mf_num = m_activeMf.size();
+        
+      }else if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::schedule){
+        m_totMfBytes[chosenMf] += actual;
+        GlobalProperty::m_totalSendBytes += actual;
+        
+        // check if this mf is finished
+        if(m_totMfBytes[chosenMf] >= m_maxMfBytes[chosenMf]){
+          m_isMfFinished[chosenMf] = 1;
+          // delete the chosen mf
           std::vector<uint32_t>::iterator it;
-          for(it = m_prioritizedMf.begin(); it != m_prioritizedMf.end(); it++){
+          for(it = m_activeMf.begin(); it != m_activeMf.end(); it++){
             if(*it == chosenMf){
-              m_prioritizedMf.erase(it);
+              m_activeMf.erase(it);
               break;
+            }
+          }
+          if(isPrioritized){
+            std::vector<uint32_t>::iterator it;
+            for(it = m_prioritizedMf.begin(); it != m_prioritizedMf.end(); it++){
+              if(*it == chosenMf){
+                m_prioritizedMf.erase(it);
+                break;
+              }
             }
           }
         }
@@ -303,7 +313,7 @@ void BulkSendApplication::SendData (void)
     {
       //static int t=0;
       if(m_maxBytes == 0){
-        std::cout << "here is 0" <<std::endl;
+        // std::cout << "here is 0" <<std::endl;
       }
       m_isFinished = true;
       

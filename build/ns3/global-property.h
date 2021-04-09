@@ -126,6 +126,9 @@ public:
 	static bool m_ack_priority;
 	static bool m_adjust_priority;
 
+	// courier zczhang
+	enum CourierMode{fair, fifo, sf, schedule};
+	static CourierMode m_courier_mode;
 };
 
 void ToLower(std::string& str);

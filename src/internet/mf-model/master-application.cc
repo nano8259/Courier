@@ -65,24 +65,6 @@ MasterApplication::~MasterApplication() {
 	delete m_cis;
 }
 
-/*void
-MasterApplication::SetNodeList(const std::vector< Ptr<Node> >& nodeList)
-{
-	if(nodeList.size()!=GlobalProperty::m_noMachines)
-		NS_FATAL_ERROR ("Mismatched noMachines!");
-
-	m_nodeList = nodeList;
-}*/
-
-/*void
-MasterApplication::SetIpList(const std::vector<Ipv4Address>& ipList)
-{
-	if(ipList.size()!=GlobalProperty::m_noMachines)
-		NS_FATAL_ERROR ("Mismatched noMachines!");
-
-	m_ipList = ipList;
-}*/
-
 void
 MasterApplication::LoadTraceFile(std::string traceFile)
 {
@@ -133,47 +115,6 @@ MasterApplication::DoSchedule ()
 		return;
 
 	// Log1("start do schedule at %u",(unsigned)Simulator::Now().GetMilliSeconds());
-
-/*	uint64_t now = Simulator::Now().GetMilliSeconds();
-	//if(now - m_lastClock >= 2000){
-	if(now - m_lastClock >= 30*1000){
-		Log1("[Clock]  Time: %u", static_cast<uint32_t>(now));
-		m_lastClock = now;
-
-		//added by lkx
-		if(!m_nis->IsAllFinished()){
-			Log1("%u Job unfinished ", static_cast<uint32_t>(GlobalProperty::m_noTotalNiJobs - GlobalProperty::m_noFinishedNiJobs));
-			uint64_t jobSendBytes = 0;
-			for(uint32_t i = 0;i<m_jobs.size();++i){
-
-				Ptr<ParallelJob> job = m_jobs[i];
-				jobSendBytes += m_jobs[i]->GetSentBytes();
-				if(job->GetJobState()!=2){
-					Log4("Job %u State %u total %lu unfinished bytes %lu ",job->GetId(),job->GetJobState(),job->GetTotalBytes(),job->GetTotalBytes() - job->GetSentBytes());
-					Log3("ActiveMfs %u, EmittedMfs %u, FinishedMfs %u ",job->GetActiveMfs(),job->GetEmittedMfs(),job->GetFinishedMfs());
-				}
-			}
-
-			Log0(("total bytes " + ToString(m_totalBytes)).c_str());
-			Log0(("job send bytes "+ ToString(jobSendBytes)+" send bytes sucess "+ ToString(GlobalProperty::m_totalSendBytes)+" send bytes all " + ToString(GlobalProperty::m_totalSendBytes_all)).c_str());
-			Log0(("stop count "+ToString(GlobalProperty::m_count_test)).c_str());
-
-			for(uint32_t j=0;j<m_slots.size();j++){
-					std::cout<<m_slots[j].getSpeed()<<std::endl;
-					for(uint32_t i=0;i<(m_slots[j].m_list).size();++i){
-						Ptr<Macroflow> m = m_slots[j].m_list[i];
-						std::vector<AggregatedMapper> flows = m->GetFlows();
-						std::cout<<"job: "<<m->GetJob()<<" reducer machine: "<<m->GetReducerMachine()<<" "
-								<<"state: "<<m->GetState()<<" connection num: "<<m->GetMaxConnection()<<std::endl;
-						for(uint32_t k=0;k<flows.size();k++)
-							std::cout<<flows[k].m_state<<" ";
-						std::cout<<std::endl;
-					}
-					std::cout<<std::endl;
-			}
-			//exit(0);
-		}
-	}*/
 
 	// Z 只有ni
 	// std::cout << "<MasterApplication> before 1	at" << (unsigned)Simulator::Now().GetMilliSeconds() << std::endl;
@@ -297,6 +238,7 @@ MasterApplication::DoSchedule ()
 	}else{
 		m_isStop = true;
 		// stop the flows
+		std::cerr << "try to stop all the flows" << std::endl; // for debug
 		std::vector<MachineSlots>::iterator itms;
 		for(itms = m_slots.begin(); itms != m_slots.end(); itms++){
 			std::map<uint32_t, ns3::Ptr<ns3::BulkSendApplication>>::iterator itmp;
@@ -357,36 +299,6 @@ MasterApplication::OutputMeasurements() const
 	double total_packets = m_totalBytes/(double)1460;
 	double drop_rate = Queue::dropped_packets/total_packets;
 	Log0( ("drop rate: "+ToString(drop_rate)).c_str() );
-
-	/*std::ofstream out("queue.txt");
-	uint32_t maxsize = 0;
-	for(uint32_t i = 0;i<RedQueue::size.size();++i){
-		out<<RedQueue::size[i]<<((i+1)%30==0?"\n":" ");
-		if(RedQueue::size[i]>maxsize) maxsize = RedQueue::size[i];
-	}
-	out<<std::endl;
-	out<<"size: "<<maxsize<<std::endl;
-	out<<"rtt: "<<RttEstimator::maxRTT<<std::endl;
-	out.close();*/
-
-	//std::cout<<DebugTag::check(std::cout)<<std::endl;
-
-	//m_slots[0].OutputSpeed();
-	/*double unforced_drop_rate = GlobalPropertyNetwork::m_noPacketLoss[0]*1460/double(GlobalProperty::m_TotalBytes);
-	double forced_drop_rate = GlobalPropertyNetwork::m_noPacketLoss[1]*1460/double(GlobalProperty::m_TotalBytes);
-	double queue_limits_drop_rate = GlobalPropertyNetwork::m_noPacketLoss[2]*1460/double(GlobalProperty::m_TotalBytes);
-	double total_drop_rate = unforced_drop_rate + forced_drop_rate + queue_limits_drop_rate;
-
-	Log3("loss  unforced %lu, forced %lu, queuelimits %lu ", GlobalPropertyNetwork::m_noPacketLoss[0], GlobalPropertyNetwork::m_noPacketLoss[1], GlobalPropertyNetwork::m_noPacketLoss[2]);
-	Log4("loss rate unforced %.3f, forced %.3f, queuelimits %.3f, total %.3f ", unforced_drop_rate, forced_drop_rate, queue_limits_drop_rate,total_drop_rate);
-
-	uint64_t jobSendBytes = 0;
-	for(uint32_t i = 0;i<m_jobs.size();++i){
-		jobSendBytes += m_jobs[i]->GetSentBytes();
-	}*/
-	//Log1("total bytes %lu ", m_totalBytes);
-	//Log0(("job send bytes "+ ToString(jobSendBytes)+" send bytes sucess "+ ToString(GlobalProperty::m_totalSendBytes)+" send bytes all " + ToString(GlobalProperty::m_totalSendBytes_all)).c_str());
-
 }
 
 void
