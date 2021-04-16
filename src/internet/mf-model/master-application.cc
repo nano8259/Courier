@@ -117,7 +117,7 @@ MasterApplication::DoSchedule ()
 	// Log1("start do schedule at %u",(unsigned)Simulator::Now().GetMilliSeconds());
 
 	// Z 只有ni
-	// std::cout << "<MasterApplication> before 1	at" << (unsigned)Simulator::Now().GetMilliSeconds() << std::endl;
+	std::cout << "<MasterApplication> before 1	at" << (unsigned)Simulator::Now().GetMilliSeconds() << std::endl;
 	// [1] update active-job list
 	m_nis->CheckJobArrival(m_jobs);
 	m_cis->CheckJobArrival();

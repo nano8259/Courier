@@ -135,7 +135,7 @@ public:
 	inline void SetMaxConnection(uint32_t maxConnection) {
 		m_maxConnection = maxConnection;
 		if(GlobalProperty::m_bwAlgorithm)adjustConnectionBw();
-		else adjustConnection();
+		// else adjustConnection();
 	}
 
 	inline void SetPriority(bool prioritized){m_prioritized =prioritized; }
@@ -153,7 +153,7 @@ protected:
 
 	// if there are more free connection resources given, we generate more flows;
 	// otherwise, we stop some flows
-	void adjustConnection();
+	// void adjustConnection();
 	void adjustConnectionBw();
 
 	bool m_initialzed;

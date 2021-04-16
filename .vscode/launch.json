@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/scratch/courier",
-            "args": ["config8.ini", "result_debug_8.txt"],
+            "args": ["config/config-test.ini", "result/test.log"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [{ "name": "LD_LIBRARY_PATH", "value": "${workspaceFolder}/build" }],

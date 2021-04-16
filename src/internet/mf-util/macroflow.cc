@@ -65,10 +65,6 @@ void Macroflow::SetFlows(std::map<uint32_t, Ptr<BulkSendApplication>> fs){
 	m_flows = fs;
 	std::vector<AggregatedMapper>::iterator it;
 	for(it = m_mapperHostList.begin(); it != m_mapperHostList.end(); it++){
-		// for debug
-		// if(m_macroflowId == 65536){
-		// 	std::cout  << "the macroflow id is " << 65536 << std::endl;
-		// }
 		if(it -> m_machineId != this->GetReducerMachine()){
 			it->m_flow = m_flows[it->m_machineId];
 			m_flows[it->m_machineId]->AddMf(m_macroflowId, it->m_size);
@@ -226,90 +222,6 @@ void Macroflow::adjustConnectionBw() {
 		flow->Continue();
 	}
 	if(!chosenHost.empty()) Macroflow::ReportChosenHosts(this,chosenHost);
-}
-
-
-// Z unused
-void Macroflow::adjustConnection() {
-	this->RemoveFinishedFlows();
-	// stop some flows
-	// Z 开始准备调整连接的大小
-	while(m_activeHosts.size() > m_maxConnection){
-		std::set<uint32_t>::iterator it = m_activeHosts.begin();
-		uint32_t machineID = *it;
-		// Z set是排好序的。。但是这个好像只是按数字大小排序阿
-		m_activeHosts.erase(it);
-
-		// find machineID in m_mapperHostList
-		uint32_t machinePos = -1;
-		for(uint32_t i = 0;i<m_mapperHostList.size();++i){
-			if(m_mapperHostList[i].m_machineId==machineID){ machinePos = i; break; }
-		}
-		Ptr<BulkSendApplication> flow = m_mapperHostList[machinePos].m_flow;
-		// flow->StopWithoutCallback();// bugfix: this function set flow->IsFinished() when L5 has been finished and waits L4.
-		flow->RemovePrioritizedMf(m_macroflowId);
-		if(flow->IsFinished()){ // we don't use flow->IsFinished() here
-			m_mapperHostList[machinePos].m_state = AggregatedMapper::Finished;
-			++m_finishedFlows;
-		}else{
-			m_mapperHostList[machinePos].m_state = AggregatedMapper::Paused;
-		}
-		m_mapperHostList[machinePos].m_size = flow->GetFlowSize() - flow->GetSentBytes();
-	}
-
-	// start some flows
-	while(m_activeHosts.size() < m_maxConnection){
-
-		bool started = false;
-		// Z 先从paused的流中寻找
-		// paused flows have higher priority
-		for(std::vector<AggregatedMapper>::iterator it = m_mapperHostList.begin() ;it!=m_mapperHostList.end();++it){
-			if(it->m_state == AggregatedMapper::Paused){ // start a paused flow
-				it->m_state = AggregatedMapper::Started;
-				//if(this->GetReducerMachine()==0)std::cout<<&(*it)<<" "<<it->m_machineId<<" continued"<<std::endl;
-				m_activeHosts.insert(it->m_machineId); // add the newly-started flow to active list
-				// it->m_flow->Continue(); // we will to continue the paused flow
-				started = true;
-				break; // we add only one connection in each loop
-			}
-		}
-		if(started) continue; // we add only one connection in each loop
-
-		// new flows has lower priority
-		std::vector<uint32_t> candidateList = Macroflow::GetCandidateList(this,true);//true: prioritized...
-		for(uint32_t i=0;i<candidateList.size();++i){
-			uint32_t machineId = candidateList[i];
-			uint32_t machinePos = (uint32_t)(-1);
-			// Z 在m_mapperHostList找要发起连接的host
-			for(uint32_t i=0;i<m_mapperHostList.size();++i){
-				if(m_mapperHostList[i].m_machineId==machineId) { machinePos=i; break; }
-			}
-			if(machinePos == (uint32_t)(-1)) continue; //not found!
-			if(m_mapperHostList[machinePos].m_state != AggregatedMapper::Pending) {
-				NS_FATAL_ERROR("flow has started!!");
-			}
-
-			std::vector<uint32_t> chosenMachine;
-			chosenMachine.push_back(machineId);
-			// Z TODO 由tracker实现，向tracker报告
-			Macroflow::ReportChosenHosts(this,chosenMachine);
-			m_mapperHostList[machinePos].m_state = AggregatedMapper::Started;
-			m_activeHosts.insert(m_mapperHostList[machinePos].m_machineId); // add the newly-started flow to active list
-			// Z 调用NS3api发起流
-			Ptr<Node> from = GlobalProperty::m_nodeList[m_mapperHostList[machinePos].m_machineId];
-			Ipv4Address to = GlobalProperty::m_ipList[this->GetReducerMachine()];
-			Time reducerDelay = MicroSeconds(rand() % GlobalProperty::m_reducerMaxDelayUs);
-			Ptr<BulkSendApplication> flow = TcpFlowHelper::CreatePendingTcpFlow(from, to, m_mapperHostList[machinePos].m_size, this->GetDscp(), reducerDelay); // create the flow
-			flow->SetMapperHostNumber(m_mapperHostList[machinePos].m_machineId);// write the mapper machine information to flow structure
-			flow->SetParent((void*)this);
-			flow->Continue(); // flow is pending when created, thus we need to start it here
-			m_mapperHostList[machinePos].m_flow = flow; // update the flow information // XXX note that sometimes m_flow is NULL, especially when we calculate something
-			started = true;
-			break; // we add only one connection in each loop
-		}
-		// Z 防止死循环吧
-		if(!started) break; // there are no new flow
-	}
 }
 
 

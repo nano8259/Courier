@@ -261,7 +261,38 @@ void BulkSendApplication::SendData (void)
 
       if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::fair){
         int mf_num = m_activeMf.size();
-        
+        int remain = actual;
+        int proportion = actual / mf_num;
+        for(auto iter = m_activeMf.begin(); iter != m_activeMf.end();){
+          int mf_remain = m_maxMfBytes[*iter] - m_totMfBytes[*iter];
+          if(mf_remain > proportion){
+            m_totMfBytes[*iter] += proportion;
+            remain -= proportion;
+            
+            iter++;
+          }else{
+            m_totMfBytes[*iter] += mf_remain;
+            remain -= mf_remain;
+            m_isMfFinished[*iter] = 1;
+            m_activeMf.erase(iter);
+          }
+        }
+        // solve remaining bytes
+        for(auto iter = m_activeMf.begin(); iter != m_activeMf.end() && remain != 0;){
+          int mf_remain = m_maxMfBytes[*iter] - m_totMfBytes[*iter];
+            if(mf_remain > remain){
+              m_totMfBytes[*iter] += remain;
+              remain = 0;
+              
+              iter++;
+            }else{
+              m_totMfBytes[*iter] += mf_remain;
+              remain -= mf_remain;
+              m_isMfFinished[*iter] = 1;
+              m_activeMf.erase(iter);
+            }
+        }
+
       }else if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::schedule){
         m_totMfBytes[chosenMf] += actual;
         GlobalProperty::m_totalSendBytes += actual;
