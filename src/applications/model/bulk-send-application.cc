@@ -249,6 +249,21 @@ void BulkSendApplication::SendData (void)
       if (m_maxBytes > 0){
           toSend = std::min (m_sendSize, m_maxMfBytes[chosenMf] - m_totMfBytes[chosenMf]);
       }
+    }else if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::sf){
+      uint64_t max_byte = m_maxBytes;
+      chosenMf = 0;
+      for(auto iter = m_activeMf.begin(); iter != m_activeMf.end(); iter++){
+        uint64_t mf_remain = m_maxMfBytes[*iter] - m_totMfBytes[*iter];
+        if(mf_remain < max_byte){
+          max_byte = mf_remain;
+          chosenMf = *iter;
+        }
+      }
+
+      toSend = std::min(m_sendSize, m_maxMfBytes[chosenMf] - m_totMfBytes[chosenMf]);
+    }else if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::fifo){
+      chosenMf = m_activeMf.front();
+      toSend = std::min(m_sendSize, m_maxMfBytes[chosenMf] - m_totMfBytes[chosenMf]);
     }
     NS_LOG_LOGIC ("sending packet at " << Simulator::Now ());
     Ptr<Packet> packet = Create<Packet> ((uint32_t)toSend);
@@ -318,19 +333,40 @@ void BulkSendApplication::SendData (void)
             }
           }
         }
+      }else if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::sf){
+        m_totMfBytes[chosenMf] += actual;
+        GlobalProperty::m_totalSendBytes += actual;
+
+        // check if this mf is finished
+        if(m_totMfBytes[chosenMf] >= m_maxMfBytes[chosenMf]){
+          m_isMfFinished[chosenMf] = 1;
+          // delete the chosen mf
+          std::vector<uint32_t>::iterator it;
+          for(it = m_activeMf.begin(); it != m_activeMf.end(); it++){
+            if(*it == chosenMf){
+              m_activeMf.erase(it);
+              break;
+            }
+          }
+        }
+      }else if(ns3::GlobalProperty::m_courier_mode == ns3::GlobalProperty::CourierMode::fifo){
+        m_totMfBytes[chosenMf] += actual;
+        GlobalProperty::m_totalSendBytes += actual;
+
+        // check if this mf is finished
+        if(m_totMfBytes[chosenMf] >= m_maxMfBytes[chosenMf]){
+          m_isMfFinished[chosenMf] = 1;
+          // delete the chosen mf
+          std::vector<uint32_t>::iterator it;
+          for(it = m_activeMf.begin(); it != m_activeMf.end(); it++){
+            if(*it == chosenMf){
+              m_activeMf.erase(it);
+              break;
+            }
+          }
+        }
       }
     }
-    // if (toSend != 0){
-    //   std::cout << "tosend = " << toSend << std::endl;
-    // }else{
-    //   std::cout << "tosend = " << toSend << std::endl;
-    // }
-    // std::cout << "tosend = " << toSend << std::endl;
-    // std::cout << "actual = " << actual << std::endl;
-
-    // We exit this loop when actual < toSend as the send side
-    // buffer is full. The "DataSent" callback will pop when
-    // some buffer space has freed ip.
     if ((unsigned)actual != toSend){
       //if(!!tb)tb->UnGet();
       //Log2("[Clock]  Time: actual %d toSend %d", actual, int(toSend));
