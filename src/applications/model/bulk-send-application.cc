@@ -254,7 +254,7 @@ void BulkSendApplication::SendData (void)
       chosenMf = 0;
       for(auto iter = m_activeMf.begin(); iter != m_activeMf.end(); iter++){
         uint64_t mf_remain = m_maxMfBytes[*iter] - m_totMfBytes[*iter];
-        if(mf_remain < max_byte){
+        if(mf_remain <= max_byte){
           max_byte = mf_remain;
           chosenMf = *iter;
         }
