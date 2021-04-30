@@ -64,25 +64,28 @@ void Macroflow::SetMapperList(const std::vector<uint32_t>& mapperList)
 void Macroflow::SetFlows(std::map<uint32_t, Ptr<BulkSendApplication>> fs){
 	m_flows = fs;
 	std::vector<AggregatedMapper>::iterator it;
-	for(it = m_mapperHostList.begin(); it != m_mapperHostList.end(); it++){
+	for(it = m_mapperHostList.begin(); it != m_mapperHostList.end();){
 		if(it -> m_machineId != this->GetReducerMachine()){
 			it->m_flow = m_flows[it->m_machineId];
 			m_flows[it->m_machineId]->AddMf(m_macroflowId, it->m_size);
 			m_flows[it->m_machineId]->Continue();
+			it++;
 		}else{
 			it->m_state=AggregatedMapper::Finished; ++m_finishedFlows;
 			// create a local flow and set some property
 			it->m_flow = Create<BulkSendApplication>();
 			it->m_flow->AssumeFinished(it->m_size);
 			it->m_flow->SetMapperHostNumber(it->m_machineId);
+			m_mapperHostList.erase(it);
 		}
 	}
 }
 
 //Algorithm2...
 void Macroflow::adjustConnectionBw() {
-
-	// std::cout << "<Macroflow> adjustConnectionBw 0" << std::endl;
+	if(GlobalProperty::m_courier_mode != GlobalProperty::CourierMode::schedule)
+		return;
+	// std::cout << "<Macroflow> adjustConnectionBw 0" << std::endl;	
 	this->RemoveFinishedFlows();
 	// std::cout << "<Macroflow> adjustConnectionBw 1" << std::endl;
 	// check local flow
@@ -117,9 +120,9 @@ void Macroflow::adjustConnectionBw() {
 		flow->RemovePrioritizedMf(m_macroflowId);
 		//std::cout<<"test"<<std::endl;
 		if(flow->IsMfFinished(m_macroflowId)){ // we don't use flow->IsFinished() here
-			m_mapperHostList[chosenMachinePos].m_state = AggregatedMapper::Finished;
-			m_mapperHostList[chosenMachinePos].m_size = 0;
-			++m_finishedFlows;
+			// m_mapperHostList[chosenMachinePos].m_state = AggregatedMapper::Finished;
+			// m_mapperHostList[chosenMachinePos].m_size = 0;
+			// ++m_finishedFlows;
 		}else{
 			// Z Pending..为啥不是Paused
 			m_mapperHostList[chosenMachinePos].m_state = AggregatedMapper::Pending;
@@ -233,31 +236,32 @@ Macroflow::RemoveFinishedFlows()
 	bool finished = false;
 	int count = 0;//added by lkx
 	// Z 遍历本reducer的流，发现有结束的，就把它从m_activeHosts中去掉
-	for(std::vector<AggregatedMapper>::iterator it = m_mapperHostList.begin();it!=m_mapperHostList.end();++it ){
+	for(std::vector<AggregatedMapper>::iterator it = m_mapperHostList.begin();it!=m_mapperHostList.end();){
 		// Z 这里为啥只有一个流？这个抽象论文里没有提到阿。。。。
 		// Z 好像没啥问题
 		Ptr<BulkSendApplication> flow = it->m_flow;
-		if(it->m_state == AggregatedMapper::Pending) continue; // flow is NULL!
+		// if(it->m_state == AggregatedMapper::Pending) continue; // flow is NULL!
 
-		if(flow->IsMfFinished(m_macroflowId) && it->m_state!=AggregatedMapper::Finished){ // use the 2nd condition to guarantee that each flow is calculated by only 1 time.
+		// if(flow->IsMfFinished(m_macroflowId) && it->m_state!=AggregatedMapper::Finished){ // use the 2nd condition to guarantee that each flow is calculated by only 1 time.
+		if(flow->IsMfFinished(m_macroflowId)){
 			++ m_finishedFlows;
 
-			// [started -> finished]
-			if(it->m_state == AggregatedMapper::Started){
-				count++;
-				it->m_state = AggregatedMapper::Finished;
-				std::set<uint32_t>::iterator its = m_activeHosts.find(it->m_machineId);
-				// Z 如果找到的话就把这个去掉
-				if(its!=m_activeHosts.end())m_activeHosts.erase(its);
-				else NS_FATAL_ERROR("cannot erase a flow from active list");
-				finished = true;
-			}
-			else{
-				//if(this->GetReducerMachine()==0)std::cout<<&(*it)<<" "<<it->m_machineId<<" error"<<std::endl;
-				//std::cout<<it->m_state<<std::endl;
-				NS_FATAL_ERROR("cannot find an active-state macroflow on a given host");
-			}
+			std::set<uint32_t>::iterator its = m_activeHosts.find(it->m_machineId);
+			// Z 如果找到的话就把这个去掉
+			if(its!=m_activeHosts.end())m_activeHosts.erase(its);
+			// else NS_FATAL_ERROR("cannot erase a flow from active list");
+			finished = true;
+			
+			m_mapperHostList.erase(it);
 		}
+			
+		else{
+			it++;
+			//if(this->GetReducerMachine()==0)std::cout<<&(*it)<<" "<<it->m_machineId<<" error"<<std::endl;
+			//std::cout<<it->m_state<<std::endl;
+			// NS_FATAL_ERROR("cannot find an active-state macroflow on a given host");
+		}
+		
 	}
 	if(finished){
 		if(GlobalProperty::m_bwAlgorithm){

@@ -1,0 +1,36 @@
+start master application
+
+nijct-mean: 51
+nijct-p95: 50
+nijct-p99: 50
+nijct-p100: 53
+
+cijct-mean: 0
+cijct-p95: 0
+cijct-p99: 0
+cijct-p100: 0
+
+cct-mean: 50
+cct-p95: 50
+cct-p99: 50
+cct-p100: 50
+
+mct-mean: 43
+mct-p95: 45
+mct-p99: 50
+mct-p100: 50
+
+jct-mean: 51
+jct-p95: 50
+jct-p99: 50
+jct-p100: 53
+
+cijobs: 0
+tp: 0
+
+size(MB): 50.3568
+utility: 0.41964
+
+max queue length(MB): 0.150242
+drop rate: 0
+Simulation Time: 10s

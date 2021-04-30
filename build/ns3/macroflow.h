@@ -129,6 +129,7 @@ public:
 
 	inline const std::set<uint32_t>& GetActiveHosts() const { return m_activeHosts; }
 	inline uint32_t GetFinishedFlowsNumber() const {return m_finishedFlows;}
+	inline bool IsFinished() const {return m_mapperHostList.size() == 0;}
 
 	// called by MachineSlots::ReallocateFetchers()
 	inline uint32_t GetMaxConnection() const {return m_maxConnection;}

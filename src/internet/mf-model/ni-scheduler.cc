@@ -45,7 +45,8 @@ NiScheduler::GetJustFinishedMfs()
 		Ptr<Macroflow> mf = m_activeMfs[i];
 		//const std::vector<Ptr<Application> >& flows = mf->GetFlows();
 		ParallelJob* job = static_cast<ParallelJob*>(mf->GetJob().operator ->());
-		bool mfFinished = mf->GetFinishedFlowsNumber()==mf->GetFlows().size(); // bug fixed, caused by aggregated mapper
+		// bool mfFinished = mf->GetFinishedFlowsNumber()==mf->GetFlows().size(); // bug fixed, caused by aggregated mapper
+		bool mfFinished = mf->IsFinished();
 		/*for(uint32_t j=0; j<flows.size(); ++j){
 			BulkSendApplication* flow = static_cast<BulkSendApplication*>(flows[j].operator ->());
 			if(!flow->IsFinished()){
