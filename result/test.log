@@ -2,8 +2,8 @@ start master application
 
 nijct-mean: 16
 nijct-p95: 39
-nijct-p99: 45
-nijct-p100: 130
+nijct-p99: 50
+nijct-p100: 115
 
 cijct-mean: 0
 cijct-p95: 0
@@ -12,25 +12,25 @@ cijct-p100: 0
 
 cct-mean: 14
 cct-p95: 35
-cct-p99: 45
-cct-p100: 130
+cct-p99: 50
+cct-p100: 115
 
 mct-mean: 12
-mct-p95: 35
-mct-p99: 60
-mct-p100: 80
+mct-p95: 30
+mct-p99: 55
+mct-p100: 90
 
 jct-mean: 16
 jct-p95: 39
-jct-p99: 45
-jct-p100: 130
+jct-p99: 50
+jct-p100: 115
 
 cijobs: 0
 tp: 0
 
 size(MB): 178.282
-utility: 0.524358
+utility: 0.575103
 
-max queue length(MB): 0.195297
+max queue length(MB): 0.180282
 drop rate: 0
-Simulation Time: 47s
+Simulation Time: 46s
